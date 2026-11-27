@@ -22,7 +22,6 @@ const ctx = () => {
   const u = st.unit ? U[st.unit] : null;
   return { greeting: DL.hours.greeting(new Date(), C.timeZone), unit: u, demo: C.demoMode, phone: u ? u.phones[0][0] : '', hours: u ? DL.hours.status(u.hours, new Date(), C.timeZone) : null };
 };
-const isMobile = () => matchMedia('(max-width:600px)').matches;
 
 function say(from, text) { st.history.push({ from, text }); if (st.history.length > 60) st.history = st.history.slice(-60); }
 function renderLog() {
@@ -46,8 +45,10 @@ function render() { renderLog(); renderOpts(); el.launch.classList.toggle('has-h
 
 function runAction(a) {
   const app = DL.app; if (!app) return;
-  if (a === 'showMenu') { app.showMenu(st.unit); if (isMobile()) minimize(); }
-  else if (a === 'startOrder') { app.startOrder(st.unit, 'chat'); if (isMobile()) minimize(); }
+  /* Ações que levam ao cardápio minimizam o chat em qualquer tela,
+     para ele não cobrir os itens. A conversa continua guardada. */
+  if (a === 'showMenu') { minimize(); app.showMenu(st.unit); }
+  else if (a === 'startOrder') { minimize(); app.startOrder(st.unit, 'chat'); }
   else if (a === 'openCart') { minimize(); app.openCart(); }
   else if (a === 'whatsappContact') { minimize(); app.whatsappContact(st.unit); }
 }
@@ -90,6 +91,13 @@ $('#chatMin').addEventListener('click', () => { minimize(); el.launch.focus(); }
 $('#chatClose').addEventListener('click', close);
 el.chat.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); minimize(); el.launch.focus(); } });
 el.launch.classList.toggle('has-history', st.history.length > 0);
+
+/* Clique ou toque fora do chat (no cardápio, por exemplo) minimiza. */
+document.addEventListener('pointerdown', e => {
+  if (!el.chat.classList.contains('open')) return;
+  if (e.target.closest('#chat, #chatLaunch, #dlg, #cart, .demo-bar')) return;
+  minimize();
+}, true);
 
 DL.chat = { open, minimize, close, go, state: () => st };
 })();
